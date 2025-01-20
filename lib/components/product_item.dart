@@ -10,7 +10,7 @@ class ProductItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final product = Provider.of<Product>(
       context,
-      listen: true,
+      listen: false,
     );
 
     return ClipRRect(
@@ -22,13 +22,22 @@ class ProductItem extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           backgroundColor: Colors.black87,
-          leading: IconButton(
-            onPressed: () {
-              product.toggleFavorite();
-            },
-            icon: Icon(
-                product.isFavorite ? Icons.favorite : Icons.favorite_border),
-            color: Theme.of(context).colorScheme.secondary,
+          leading: Consumer<Product>(
+            // child: Column(
+            //   children: [
+            //     const Text('Algo que nunca muda #01'),
+            //     const Text('Algo que nunca muda #02'),
+            //     const Text('Algo que nunca muda #03'),
+            //   ],
+            // ),
+            builder: (ctx, product, _) => IconButton(
+              onPressed: () {
+                product.toggleFavorite();
+              },
+              icon: Icon(
+                  product.isFavorite ? Icons.favorite : Icons.favorite_border),
+              color: Theme.of(context).colorScheme.secondary,
+            ),
           ),
           trailing: IconButton(
             onPressed: () {},
