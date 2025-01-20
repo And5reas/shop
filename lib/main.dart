@@ -12,9 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Shopping',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        fontFamily: 'Lato',
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.deepPurple,
+            secondary: Colors.deepOrange,
+            primary: Colors.purple),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.deepPurple,
           centerTitle: true,
