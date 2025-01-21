@@ -3,18 +3,37 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shop/data/dummy_data.dart';
 import 'package:shop/models/product.dart';
 
 class ProductList with ChangeNotifier {
   final _baseUrl = 'https://shop-udemy-4285f-default-rtdb.firebaseio.com';
-  final List<Product> _items = dummyProducts;
+  final List<Product> _items = [];
 
   List<Product> get items => [..._items];
   List<Product> get favoriteItems =>
       _items.where((product) => product.isFavorite).toList();
 
   int get itemCount => _items.length;
+
+  Future<void> loadProducts() async {
+    _items.clear();
+    final response = await http.get(Uri.parse('$_baseUrl/products.json'));
+    if (response.body == 'null') return;
+    Map<String, dynamic> data = jsonDecode(response.body);
+    data.forEach((productId, productData) {
+      _items.add(
+        Product(
+          id: productId,
+          name: productData['name'],
+          description: productData['description'],
+          price: productData['price'],
+          imageUrl: productData['imageUrl'],
+          isFavorite: productData['isFavorite'],
+        ),
+      );
+    });
+    notifyListeners();
+  }
 
   void deleteProduct(Product product) {
     int index = _items.indexWhere((p) => p.id == product.id);
@@ -24,8 +43,8 @@ class ProductList with ChangeNotifier {
     }
   }
 
-  void addProduct(Product product) {
-    http.post(
+  Future<void> addProduct(Product product) async {
+    final response = await http.post(
       Uri.parse('$_baseUrl/products.json'),
       body: jsonEncode({
         "name": product.name,
@@ -36,19 +55,30 @@ class ProductList with ChangeNotifier {
       }),
     );
 
-    _items.add(product);
+    final id = jsonDecode(response.body)['name'];
+    _items.add(
+      Product(
+        id: id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        isFavorite: product.isFavorite,
+      ),
+    );
     notifyListeners();
   }
 
-  void updateProduct(Product product) {
+  Future<void> updateProduct(Product product) {
     int index = _items.indexWhere((p) => p.id == product.id);
     if (index >= 0) {
       _items[index] = product;
       notifyListeners();
     }
+    return Future.value();
   }
 
-  void saveProduct(Map<String, Object> data) {
+  Future<void> saveProduct(Map<String, Object> data) {
     bool hasId = data['id'] != null;
 
     final product = Product(
@@ -60,9 +90,9 @@ class ProductList with ChangeNotifier {
     );
 
     if (hasId) {
-      updateProduct(product);
+      return updateProduct(product);
     } else {
-      addProduct(product);
+      return addProduct(product);
     }
   }
 }

@@ -20,6 +20,8 @@ class _ProductFormPageState extends State<ProductFormPage> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, Object> _formData = {};
 
+  bool _isLoading = false;
+
   void updateImage() {
     setState(() {});
   }
@@ -36,7 +38,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     return isValidUrl && isNetworkUrl && hasExtensionUrl;
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     final isValid = _formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -45,9 +47,33 @@ class _ProductFormPageState extends State<ProductFormPage> {
 
     _formKey.currentState?.save();
 
-    Provider.of<ProductList>(context, listen: false).saveProduct(_formData);
+    setState(() => _isLoading = true);
 
-    Navigator.of(context).pop();
+    try {
+      await Provider.of<ProductList>(context, listen: false)
+          .saveProduct(_formData);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (error) {
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('Ocorreu um erro! D:'),
+            content: Text('Ocorreu um erro ao salvar o produto ;-;'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Ok'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -97,127 +123,125 @@ class _ProductFormPageState extends State<ProductFormPage> {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                initialValue: _formData['name']?.toString(),
-                decoration: InputDecoration(labelText: 'Nome'),
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) =>
-                    FocusScope.of(context).requestFocus(_priceFocus),
-                onSaved: (name) => _formData['name'] = name ?? '',
-                validator: (value) {
-                  final name = value ?? '';
-
-                  if (name.trim().isEmpty) {
-                    return 'Por favor, insira o nome do produto';
-                  }
-
-                  if (name.trim().length < 3) {
-                    return 'Nome muito pequeno, por favor, insira um nome maior';
-                  }
-
-                  return null;
-                },
-              ),
-              TextFormField(
-                initialValue: _formData['price']?.toString(),
-                decoration: InputDecoration(labelText: 'Preço'),
-                keyboardType: TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                focusNode: _priceFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) =>
-                    FocusScope.of(context).requestFocus(_imageUrlFocus),
-                onSaved: (price) =>
-                    _formData['price'] = double.parse(price ?? '0'),
-                validator: (value) {
-                  final priceString = value ?? '-1';
-                  final price = double.tryParse(priceString) ?? -1;
-
-                  if (price <= 0) {
-                    return 'Por favor, informe um preço válido';
-                  }
-
-                  return null;
-                },
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _imageUrlController,
-                      decoration: InputDecoration(labelText: 'Url da Imagem'),
-                      focusNode: _imageUrlFocus,
-                      keyboardType: TextInputType.url,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => FocusScope.of(context)
-                          .requestFocus(_descriptionFocus),
-                      onSaved: (imageUrl) =>
-                          _formData['imageUrl'] = imageUrl ?? '0',
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(15),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    TextFormField(
+                      initialValue: _formData['name']?.toString(),
+                      decoration: InputDecoration(labelText: 'Nome'),
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).requestFocus(_priceFocus),
+                      onSaved: (name) => _formData['name'] = name ?? '',
                       validator: (value) {
-                        final imageUrl = value ?? '';
+                        final name = value ?? '';
 
-                        if (!isValidImageUrl(imageUrl)) {
-                          return 'Por favor, insira uma url válida';
+                        if (name.trim().isEmpty) {
+                          return 'Por favor, insira o nome do produto';
+                        }
+
+                        if (name.trim().length < 3) {
+                          return 'Nome muito pequeno, por favor, insira um nome maior';
                         }
 
                         return null;
                       },
                     ),
-                  ),
-                  Container(
-                    height: 100,
-                    width: 100,
-                    margin: const EdgeInsets.only(top: 20, left: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey, width: 1),
+                    TextFormField(
+                      initialValue: _formData['price']?.toString(),
+                      decoration: InputDecoration(labelText: 'Preço'),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      focusNode: _priceFocus,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).requestFocus(_imageUrlFocus),
+                      onSaved: (price) =>
+                          _formData['price'] = double.parse(price ?? '0'),
+                      validator: (value) {
+                        final priceString = value ?? '-1';
+                        final price = double.tryParse(priceString) ?? -1;
+
+                        if (price <= 0) {
+                          return 'Por favor, informe um preço válido';
+                        }
+
+                        return null;
+                      },
                     ),
-                    alignment: Alignment.center,
-                    child: _imageUrlController.text.isEmpty
-                        ? Text('Informe a URL')
-                        : SizedBox(
-                            height: 100,
-                            width: 100,
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: Image.network(_imageUrlController.text),
-                            ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _imageUrlController,
+                            decoration:
+                                InputDecoration(labelText: 'Url da Imagem'),
+                            focusNode: _imageUrlFocus,
+                            keyboardType: TextInputType.url,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => FocusScope.of(context)
+                                .requestFocus(_descriptionFocus),
+                            onSaved: (imageUrl) =>
+                                _formData['imageUrl'] = imageUrl ?? '0',
+                            validator: (value) {
+                              final imageUrl = value ?? '';
+
+                              if (!isValidImageUrl(imageUrl)) {
+                                return 'Por favor, insira uma url válida';
+                              }
+
+                              return null;
+                            },
                           ),
-                  ),
-                ],
+                        ),
+                        Container(
+                          height: 100,
+                          width: 100,
+                          margin: const EdgeInsets.only(top: 20, left: 10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          alignment: Alignment.center,
+                          child: _imageUrlController.text.isEmpty
+                              ? Text('Informe a URL')
+                              : Image.network(_imageUrlController.text),
+                        ),
+                      ],
+                    ),
+                    TextFormField(
+                      initialValue: _formData['description']?.toString(),
+                      decoration: InputDecoration(labelText: 'Descrição'),
+                      focusNode: _descriptionFocus,
+                      onFieldSubmitted: (_) => _submitForm(),
+                      onSaved: (description) =>
+                          _formData['description'] = description ?? '0',
+                      validator: (value) {
+                        final name = value ?? '';
+
+                        if (name.trim().isEmpty) {
+                          return 'Por favor, insira uma descrição do produto';
+                        }
+
+                        if (name.trim().length < 10) {
+                          return 'Descrição muito pequena, por favor, insira uma descrição maior';
+                        }
+
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
-              TextFormField(
-                initialValue: _formData['description']?.toString(),
-                decoration: InputDecoration(labelText: 'Descrição'),
-                focusNode: _descriptionFocus,
-                onFieldSubmitted: (_) => _submitForm(),
-                onSaved: (description) =>
-                    _formData['description'] = description ?? '0',
-                validator: (value) {
-                  final name = value ?? '';
-
-                  if (name.trim().isEmpty) {
-                    return 'Por favor, insira uma descrição do produto';
-                  }
-
-                  if (name.trim().length < 10) {
-                    return 'Descrição muito pequena, por favor, insira uma descrição maior';
-                  }
-
-                  return null;
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }
