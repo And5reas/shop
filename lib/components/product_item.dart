@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shop/models/product.dart';
+import 'package:shop/models/product_list.dart';
+import 'package:shop/utils/app_routes.dart';
 
 class ProductItem extends StatelessWidget {
   final Product product;
@@ -7,6 +10,7 @@ class ProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ProductList productList = Provider.of(context, listen: false);
     return ListTile(
       leading: CircleAvatar(
         backgroundImage: NetworkImage(product.imageUrl),
@@ -17,14 +21,37 @@ class ProductItem extends StatelessWidget {
         child: Row(
           children: [
             IconButton(
-              onPressed: () {},
+              onPressed: () => Navigator.of(context).pushNamed(
+                AppRoutes.productForm,
+                arguments: product,
+              ),
               icon: Icon(
                 Icons.edit,
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
             IconButton(
-              onPressed: () {},
+              onPressed: () => showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text('Excluir Produto'),
+                  content: Text('Quer remover o produto da Loja?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: Text('Não'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: Text('Sim'),
+                    ),
+                  ],
+                ),
+              ).then(
+                (value) => {
+                  if (value ?? false) {productList.deleteProduct(product)}
+                },
+              ),
               icon: Icon(
                 Icons.delete,
                 color: Theme.of(context).colorScheme.error,
