@@ -18,6 +18,8 @@ class ProductGridItem extends StatelessWidget {
       listen: false,
     );
 
+    final msgError = ScaffoldMessenger.of(context);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: GridTile(
@@ -36,8 +38,13 @@ class ProductGridItem extends StatelessWidget {
             //   ],
             // ),
             builder: (ctx, product, _) => IconButton(
-              onPressed: () {
-                product.toggleFavorite();
+              onPressed: () async {
+                try {
+                  await product.toggleFavorite();
+                } catch (err) {
+                  msgError
+                      .showSnackBar(SnackBar(content: Text(err.toString())));
+                }
               },
               icon: Icon(
                   product.isFavorite ? Icons.favorite : Icons.favorite_border),
