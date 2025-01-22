@@ -136,6 +136,7 @@ class _AuthFormState extends State<AuthForm> {
               if (_isSigup())
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Confirmar Senha'),
+                  onFieldSubmitted: (_) => submit(),
                   keyboardType: TextInputType.emailAddress,
                   obscureText: true,
                   validator: _isLogin()
