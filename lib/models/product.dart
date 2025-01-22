@@ -27,26 +27,22 @@ class Product with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleFavorite() async {
-    try {
+  Future<void> toggleFavorite(String token) async {
+    _toggleFavorite();
+
+    final response = await http.patch(
+      Uri.parse('${Constants.productsBaseUrl}/$id.json?auth=$token'),
+      body: jsonEncode({
+        "isFavorite": isFavorite,
+      }),
+    );
+
+    if (response.statusCode >= 400) {
       _toggleFavorite();
 
-      final response = await http.patch(
-        Uri.parse('${Constants.productsBaseUrl}/$id.json'),
-        body: jsonEncode({
-          "isFavorite": isFavorite,
-        }),
-      );
-
-      if (response.statusCode >= 400) {
-        _toggleFavorite();
-
-        throw HttpException(
-            msg: 'Não foi possível salvar como favorito :(',
-            statusCode: response.statusCode);
-      }
-    } catch (_) {
-      _toggleFavorite();
+      throw HttpException(
+          msg: 'Não foi possível salvar como favorito :(',
+          statusCode: response.statusCode);
     }
   }
 }
