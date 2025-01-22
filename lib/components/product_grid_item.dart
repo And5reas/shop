@@ -45,7 +45,8 @@ class ProductGridItem extends StatelessWidget {
             builder: (ctx, product, _) => IconButton(
               onPressed: () async {
                 try {
-                  await product.toggleFavorite(auth.token ?? '');
+                  await product.toggleFavorite(
+                      auth.token ?? '', auth.userId ?? '');
                 } catch (err) {
                   msgError
                       .showSnackBar(SnackBar(content: Text(err.toString())));
