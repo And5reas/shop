@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shop/errors/http_exception.dart';
+import 'package:shop/utils/constants.dart';
 
 class Product with ChangeNotifier {
-  final _baseUrl = 'https://shop-udemy-4285f-default-rtdb.firebaseio.com';
-
   final String id;
   final String name;
   final String description;
@@ -23,28 +22,31 @@ class Product with ChangeNotifier {
     this.isFavorite = false,
   });
 
-  Future<void> toggleFavorite() async {
+  void _toggleFavorite() {
     isFavorite = !isFavorite;
     notifyListeners();
+  }
 
-    final response = await http.patch(
-      Uri.parse('$_baseUrl/products/$id.json'),
-      body: jsonEncode({
-        "name": name,
-        "description": description,
-        "price": price,
-        "imageUrl": imageUrl,
-        "isFavorite": isFavorite,
-      }),
-    );
+  Future<void> toggleFavorite() async {
+    try {
+      _toggleFavorite();
 
-    if (response.statusCode >= 400) {
-      isFavorite = !isFavorite;
-      notifyListeners();
+      final response = await http.patch(
+        Uri.parse('${Constants.productsBaseUrl}/$id.json'),
+        body: jsonEncode({
+          "isFavorite": isFavorite,
+        }),
+      );
 
-      throw HttpException(
-          msg: 'Não foi possível salvar como favorito :(',
-          statusCode: response.statusCode);
+      if (response.statusCode >= 400) {
+        _toggleFavorite();
+
+        throw HttpException(
+            msg: 'Não foi possível salvar como favorito :(',
+            statusCode: response.statusCode);
+      }
+    } catch (_) {
+      _toggleFavorite();
     }
   }
 }
